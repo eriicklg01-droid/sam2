@@ -125,18 +125,15 @@ if 'df_matriz_original' in st.session_state:
     else:
         st.warning("Coordenadas no disponibles para el mapa.")
     
-    st.markdown("---")
+   st.markdown("---")
     
-    buffer_excel = io.BytesIO()
-    with pd.ExcelWriter(buffer_excel, engine='openpyxl') as writer:
-        df_filtrado.to_excel(writer, sheet_name='TD_DATOS', index=False)
-    data_excel = buffer_excel.getvalue()
+    csv_data = df_filtrado.to_csv(index=False).encode('utf-8')
     
     st.download_button(
-        label="Descargar Matriz",
-        data=data_excel,
-        file_name=f"TD_DATOS_DINAMICOS_{estacion_act}.csv",
-        mime="application/vnd.ms-excel.sheet.macroEnabled.12",
+        label="Descargar Matriz en CSV",
+        data=csv_data,
+        file_name=f"TD_DATOS_FILTRADOS_{estacion_act}.csv",
+        mime="text/csv",
         use_container_width=True
     )
 else:
