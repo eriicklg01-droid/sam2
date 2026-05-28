@@ -33,7 +33,6 @@ def procesar_meteorologia(station, fecha_inicio, fecha_fin, lista_variables):
     y forzar enteros en temperatura para delegar los totales dinámicos a la UI.
     """
     try:
-        # 1. Mapeo técnico de variables
         mapeo_iem = {
             "QNH": "alti",
             "Temperatura": "tmpc",
@@ -62,7 +61,6 @@ def procesar_meteorologia(station, fecha_inicio, fecha_fin, lista_variables):
         if len(datos_limpios) <= 1:
             return None, "No se encontraron registros meteorológicos."
             
-        # 2. Cargar datos en el DataFrame
         df = pd.read_csv(io.StringIO("\n".join(datos_limpios)))
         df['valid'] = pd.to_datetime(df['valid'])
         
@@ -70,7 +68,6 @@ def procesar_meteorologia(station, fecha_inicio, fecha_fin, lista_variables):
         for col in columnas_tecnicas:
             df[col] = pd.to_numeric(df[col], errors='coerce')
             
-        # 3. Formatear componentes de Tiempo
         df['Etiquetas de fila'] = df['valid'].dt.strftime('%I %p')
         df['Mes'] = df['valid'].dt.strftime('%b')
         
@@ -81,7 +78,6 @@ def procesar_meteorologia(station, fecha_inicio, fecha_fin, lista_variables):
         horas_ordenadas = pd.date_range("00:00", "23:00", freq="h").strftime('%I %p').tolist()
         df['Etiquetas de fila'] = pd.Categorical(df['Etiquetas de fila'], categories=horas_ordenadas, ordered=True)
 
-        # 4. Pivotar la tabla mensual
         df_pivot = df.pivot_table(
             values=columnas_tecnicas,
             index='Etiquetas de fila',
@@ -90,11 +86,9 @@ def procesar_meteorologia(station, fecha_inicio, fecha_fin, lista_variables):
             observed=False
         ).round(2)
         
-        # Aplanar los encabezados superiores
         df_pivot.columns = [f"{mes}_{var}" for var, mes in df_pivot.columns]
         df_pivot = df_pivot.reset_index()
         
-        # --- 5. LIMPIEZA Y FORMATEO DE ENTEROS EN COLUMNAS MENSUALES ---
         cols_tmpc = [c for c in df_pivot.columns if '_tmpc' in c]
         for col_t in cols_tmpc:
             df_pivot[col_t] = df_pivot[col_t].round(0).astype("Int64")
