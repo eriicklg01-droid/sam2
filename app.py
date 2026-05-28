@@ -50,7 +50,7 @@ if 'df_matriz_original' in st.session_state:
     iata_code = meteorologia.obtener_iata(estacion_act)
     
     st.markdown("---")
-    st.subheader(f"🔍 Filtrar Visualización (Datos Disponibles)")
+    st.subheader(f"Filtrar Visualización (Datos Disponibles)")
     
     lista_meses_fijos = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     meses_disponibles = sorted(list(set([col.split('_')[0] for col in df_origen.columns if col.split('_')[0] in lista_meses_fijos])), 
@@ -74,7 +74,6 @@ if 'df_matriz_original' in st.session_state:
                 if any(col.startswith(f"{mes}_") for mes in meses_filtrados):
                     columnas_a_mostrar.append(col)
             else:
-                # Si no hay filtro, se agregan todas de forma normal
                 columnas_a_mostrar.append(col)
                 
     df_filtrado = df_origen[columnas_a_mostrar]
