@@ -135,7 +135,7 @@ if 'df_matriz_original' in st.session_state:
     st.download_button(
         label="Descargar Matriz",
         data=data_excel,
-        file_name=f"TD_DATOS_DINAMICOS_{estacion_act}.xlsm",
+        file_name=f"TD_DATOS_DINAMICOS_{estacion_act}.csv",
         mime="application/vnd.ms-excel.sheet.macroEnabled.12",
         use_container_width=True
     )
