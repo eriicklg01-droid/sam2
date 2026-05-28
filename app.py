@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.colors as mcolors
 
-st.set_page_config(page_title="SAM Online FREE XXXX", layout="wide")
+st.set_page_config(page_title="SAM Online", layout="wide")
 
 st.title("SAM 2.0")
 st.subheader("Matriz")
