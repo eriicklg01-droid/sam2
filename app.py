@@ -3,6 +3,7 @@ import meteorologia
 from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.colors as mcolors
+import io
 
 st.set_page_config(page_title="SAM Online", layout="wide")
 
@@ -38,7 +39,6 @@ if btn_ejecutar:
             
             if df_matriz is not None:
                 st.success("¡Reporte generado de manera exitosa!")
-                
                 st.session_state['df_matriz_original'] = df_matriz
                 st.session_state['estacion_actual'] = estacion
             else:
@@ -57,26 +57,38 @@ if 'df_matriz_original' in st.session_state:
                                key=lambda x: lista_meses_fijos.index(x))
     
     meses_filtrados = st.multiselect(
-        "Selecciona los meses que deseas filtrar:",
+        "Selecciona los meses que deseas visualizar (Deja vacío para ver todos):",
         options=meses_disponibles
     )
     
-    columnas_a_mostrar = ['Etiquetas de fila']
-    
-    if "Total Promedio de tmpc" in df_origen.columns:
-        columnas_a_mostrar.append("Total Promedio de tmpc")
-    if "Total Promedio de alti" in df_origen.columns:
-        columnas_a_mostrar.append("Total Promedio de alti")
-        
+    columnas_meses_visibles = []
     for col in df_origen.columns:
-        if col not in columnas_a_mostrar:
+        if col != 'Etiquetas de fila':
             if meses_filtrados:
                 if any(col.startswith(f"{mes}_") for mes in meses_filtrados):
-                    columnas_a_mostrar.append(col)
+                    columnas_meses_visibles.append(col)
             else:
-                columnas_a_mostrar.append(col)
+                columnas_meses_visibles.append(col)
                 
-    df_filtrado = df_origen[columnas_a_mostrar]
+    df_filtrado = df_origen[['Etiquetas de fila'] + columnas_meses_visibles].copy()
+    
+    totales_columnas_dinamicas = []
+    
+    cols_tmpc_visibles = [c for c in columnas_meses_visibles if '_tmpc' in c]
+    if cols_tmpc_visibles:
+        nombre_total_tmpc = "Total Promedio de tmpc"
+        df_filtrado[nombre_total_tmpc] = df_filtrado[cols_tmpc_visibles].mean(axis=1).round(0).astype("Int64")
+        totales_columnas_dinamicas.append(nombre_total_tmpc)
+        
+    cols_alti_visibles = [c for c in columnas_meses_visibles if '_alti' in c]
+    if cols_alti_visibles:
+        nombre_total_alti = "Total Promedio de alti"
+        df_filtrado[nombre_total_alti] = df_filtrado[cols_alti_visibles].mean(axis=1).round(2)
+        totales_columnas_dinamicas.append(nombre_total_alti)
+        
+    # 4. Reordenar de izquierda a derecha fijos: Horas -> Totales Dinámicos -> Meses
+    orden_columnas = ['Etiquetas de fila'] + totales_columnas_dinamicas + columnas_meses_visibles
+    df_filtrado = df_filtrado[orden_columnas]
     
     st.subheader(f"Datos: TD- {estacion_act} ({iata_code})")
     
@@ -85,9 +97,9 @@ if 'df_matriz_original' in st.session_state:
         if col == 'Etiquetas de fila':
             continue
         elif 'tmpc' in col:
-            formatos_columnas[col] = "{:.0f}"
+            formatos_columnas[col] = "{:.0f}"  
         else:
-            formatos_columnas[col] = "{:.2f}"
+            formatos_columnas[col] = "{:.2f}"  
     
     df_style = df_filtrado.style.format(formatos_columnas, na_rep="-")
 
@@ -105,12 +117,26 @@ if 'df_matriz_original' in st.session_state:
     
     st.dataframe(df_style, use_container_width=True, hide_index=True)
     
-    csv_data = df_filtrado.to_csv(index=False).encode('utf-8')
+    st.markdown("---")
+    st.subheader(f"Ubicación Geográfica de la Estación - {estacion_act}")
+    df_mapa = meteorologia.obtener_coordenadas(estacion_act)
+    if df_mapa is not None:
+        st.map(df_mapa, zoom=12, use_container_width=True)
+    else:
+        st.warning("Coordenadas no disponibles para el mapa.")
+    
+    st.markdown("---")
+    
+    buffer_excel = io.BytesIO()
+    with pd.ExcelWriter(buffer_excel, engine='openpyxl') as writer:
+        df_filtrado.to_excel(writer, sheet_name='TD_DATOS', index=False)
+    data_excel = buffer_excel.getvalue()
+    
     st.download_button(
-        label="Descargar en CSV (Vista Actual)",
-        data=csv_data,
-        file_name=f"TD_DATOS_FILTRADOS_{estacion_act}.csv",
-        mime="text/csv",
+        label="Descargar Matriz",
+        data=data_excel,
+        file_name=f"TD_DATOS_DINAMICOS_{estacion_act}.xlsm",
+        mime="application/vnd.ms-excel.sheet.macroEnabled.12",
         use_container_width=True
     )
 else:
