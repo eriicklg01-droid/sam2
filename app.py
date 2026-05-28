@@ -12,7 +12,7 @@ st.markdown("---")
 
 with st.sidebar:
     st.header("Parámetros")
-    estacion = st.text_input("Código ICAO", value="SKBO", max_chars=4).upper()
+    estacion = st.text_input("Código ICAO", value="", max_chars=4).upper()
     
     variables_seleccionadas = st.multiselect(
         "Variables",
@@ -43,7 +43,6 @@ if btn_ejecutar:
             else:
                 st.error(f"Error: {status}")
 
-# --- BLOQUE DE FILTRADO POST-GENERACIÓN CON TOTALES DINÁMICOS ---
 if 'df_matriz_original' in st.session_state:
     df_origen = st.session_state['df_matriz_original']
     estacion_act = st.session_state['estacion_actual']
@@ -126,7 +125,6 @@ if 'df_matriz_original' in st.session_state:
     
     st.markdown("---")
     
-    # --- BOTÓN DE DESCARGA EN CSV (LIMPIO Y COMPATIBLE) ---
     csv_data = df_filtrado.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="Descargar Matriz en CSV",
